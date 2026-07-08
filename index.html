@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Habit Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Corner radius */
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+
+      /* Duration */
+      --duration-fast: 150ms;
+      --duration-normal: 200ms;
+      --duration-slow: 280ms;
+
+      /* Colors */
+      --bg-color: #EFEFEF;
+      --text-main: #333333;
+      --text-sub: #989898;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #E8ECEF; /* darker backdrop to make phone pop */
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    .iphone-mockup {
+      width: 393px;
+      height: 852px;
+      background-color: #000;
+      border-radius: 54px; /* classic iPhone radius */
+      box-shadow: 
+        0 0 0 12px #0F0F0F, /* phone bezel */
+        0 20px 40px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      color: var(--text-main);
+      transform: scale(0.85);
+      transform-origin: center;
+    }
+
+    /* iPhone Notch/Dynamic Island simulated space */
+    .iphone-mockup::before {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 35px;
+      background-color: #0F0F0F;
+      border-radius: 20px;
+      z-index: 1000;
+    }
+
+    /* Page System */
+    .page {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      padding: 64px 32px 48px 32px;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    
+    .page.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .page-1 {
+      background-color: var(--bg-color);
+    }
+
+    .page-2 {
+      background-color: var(--bg-color);
+    }
+
+    /* Interactive Elements */
+    .clickable {
+      transition: transform var(--duration-fast) cubic-bezier(0.2, 0, 0, 1), 
+                  box-shadow var(--duration-fast) cubic-bezier(0.2, 0, 0, 1);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .clickable:active {
+      transform: scale(0.98);
+    }
+
+    /* Shadows */
+    .shadow-ring {
+      box-shadow: 
+        0 1px 2px rgba(0,0,0,0.05), 
+        0 2px 4px rgba(0,0,0,0.02), 
+        0 0 0 0.5px rgba(0,0,0,0.08);
+    }
+
+    .shadow-ring:hover {
+      box-shadow: 
+        0 4px 8px rgba(0,0,0,0.04), 
+        0 8px 16px rgba(0,0,0,0.03), 
+        0 0 0 0.5px rgba(0,0,0,0.1);
+    }
+
+    /* --- PAGE 1 STYLES --- */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 16px;
+    }
+
+    .app-header h1 {
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      margin: 0;
+      line-height: 1.15;
+    }
+
+    .date-text {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin: 6px 0 0 0;
+      font-weight: 500;
+    }
+
+    .nav-grid {
+      width: 16px;
+      height: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 2px;
+    }
+    
+    .nav-grid .square {
+      background-color: transparent;
+      border: 1.5px solid #989898;
+      box-sizing: border-box;
+      border-radius: 2px;
+    }
+
+    .app-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin-top: 24px;
+    }
+
+    .activity-circle {
+      width: 260px;
+      height: 260px;
+      border-radius: 32px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .activity-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .activity-circle::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.25);
+    }
+
+    .activity-icon {
+      position: relative;
+      z-index: 10;
+      width: 80px;
+      height: 80px;
+      filter: invert(1) brightness(100);
+    }
+
+    .activity-info {
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .activity-info h2 {
+      font-size: 26px;
+      font-weight: 500;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .activity-info p {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin: 2px 0 0 0;
+      font-weight: 500;
+    }
+
+    .app-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      margin-bottom: 16px;
+      margin-top: auto;
+    }
+
+    .motivation-text {
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.4;
+      color: var(--text-sub);
+      margin: 0;
+      padding: 0;
+      white-space: nowrap;
+    }
+
+    .primary-btn {
+      background-color: #000;
+      color: #FFF;
+      border: none;
+      border-radius: 100px;
+      padding: 18px;
+      font-size: 16px;
+      font-weight: 500;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    /* Splash Screen */
+    .splash-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('refs/splash%20screen.jpg');
+      background-size: cover;
+      background-position: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease-out;
+    }
+
+    /* Congrats Popup */
+    .popup-fullscreen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--bg-color);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+      transform: translateY(20px);
+    }
+
+    .popup-fullscreen.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+    
+    .popup-fullscreen.collapsing {
+      transform: scale(0);
+      opacity: 0;
+      transition: opacity 0.5s cubic-bezier(0.5, 0, 0.2, 1), transform 0.5s cubic-bezier(0.5, 0, 0.2, 1);
+    }
+
+    .video-card {
+      width: 260px;
+      height: 260px;
+      background-color: #FFFFFF;
+      background-image: url('refs/flowerr%20anim%20bg.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .video-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%);
+      -webkit-mask-image: linear-gradient(to top, black 20%, transparent 100%);
+      mask-image: linear-gradient(to top, black 20%, transparent 100%);
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .flower-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      margin-bottom: 16px;
+      pointer-events: none;
+      filter: invert(1);
+      mix-blend-mode: screen;
+      position: relative;
+      z-index: 10;
+    }
+
+    .congrats-content {
+      text-align: center;
+      padding: 0 24px;
+    }
+
+    .congrats-content h2 {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .congrats-content p {
+      font-size: 16px;
+      color: var(--text-sub);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+
+    /* --- PAGE 2 STYLES --- */
+    .p2-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+    }
+    
+    .profile-pic {
+      width: 44px;
+      height: 44px;
+      background-color: #FFF;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .icon-circle {
+      width: 40px;
+      height: 40px;
+      background-color: #FFF;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #989898;
+    }
+    .icon-circle svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .p2-statement {
+      margin-top: 48px;
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--text-sub);
+      line-height: 1.4;
+      letter-spacing: -0.02em;
+    }
+
+    .p2-statement u {
+      text-decoration: none;
+      border-bottom: 2px solid var(--text-main);
+      color: var(--text-main);
+    }
+
+    .p2-schedule {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-sub);
+    }
+
+    .p2-cards {
+      margin-top: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background-color: #FFF;
+      border-radius: 20px;
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      margin: 0;
+    }
+
+    .card-subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .card-number {
+      font-size: 40px;
+      font-weight: 600;
+      color: #111;
+      margin-top: 12px;
+      letter-spacing: -0.04em;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .card-row {
+      display: flex;
+      gap: 16px;
+    }
+    .card-row .card {
+      flex: 1;
+      padding: 24px 16px;
+    }
+    
+    .recovery-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Github style grid placeholder */
+    .activity-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+      margin-top: 24px;
+    }
+    .grid-cell {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      background-color: #F0F0F0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .grid-cell.active-light { background-color: #D3D3D3; border-color: #D3D3D3; }
+    .grid-cell.active-heavy { background-color: #666666; border-color: #666666; }
+    .grid-cell.active-image { 
+      background-image: url('refs/flowerr%20anim%20bg.jpg');
+      background-size: cover;
+      background-position: center;
+      border-color: transparent;
+    }
+
+    /* Custom scrollbar for page */
+    .page::-webkit-scrollbar {
+      display: none;
+    }
+    .page {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="iphone-mockup">
+    <!-- Splash Screen -->
+    <div id="splash" class="splash-screen"></div>
+
+    <!-- PAGE 1 (Homepage) -->
+    <div id="page-1" class="page page-1 active">
+      <header class="app-header">
+        <div>
+          <h1>Morning,<br>Ayana!</h1>
+          <p class="date-text" id="current-date"></p>
+        </div>
+        <div class="icon-circle shadow-ring clickable" id="go-to-page-2">
+          <div class="nav-grid">
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+            <div class="square"></div>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <div class="activity-circle clickable shadow-ring">
+          <img src="refs/circle%20image.jpg" class="activity-bg" alt="Activity" />
+          <img src="refs/Spa%20Flower.svg" class="activity-icon" alt="Spa Flower" />
+        </div>
+        
+        <div class="activity-info">
+          <h2>Aerial Yoga</h2>
+          <p>Day 17/30</p>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <p class="motivation-text">So nice to have you back. Proceed with<br>your task to make your recovery bloom!</p>
+        <button class="primary-btn clickable" id="mark-completed-btn">Mark completed</button>
+      </footer>
+    </div>
+
+    <!-- PAGE 2 (Details) -->
+    <div id="page-2" class="page page-2">
+      <div class="p2-header">
+        <div class="profile-pic shadow-ring">A</div>
+        <div class="header-actions">
+          <div class="icon-circle shadow-ring clickable">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <div class="icon-circle shadow-ring clickable">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
+            </svg>
+          </div>
+          <div class="icon-circle shadow-ring clickable" id="close-page-2">
+            <div class="nav-grid">
+              <div class="square"></div>
+              <div class="square"></div>
+              <div class="square"></div>
+              <div class="square"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p2-statement">
+        I will <u>practice aerial yoga</u>, <u>every morning</u> so that I can become a <u>centered person</u>
+      </div>
+      
+      <div class="p2-schedule">
+        <div class="icon-circle shadow-ring" style="width:28px; height:28px;">
+          <svg style="width:14px; height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        Everyday at 7:00AM
+      </div>
+      
+      <div class="p2-cards">
+        <div class="card shadow-ring recovery-card">
+          <div class="recovery-info" style="display: flex; gap: 12px; align-items: center;">
+            <div class="card-number" style="font-size: 42px; line-height: 1; margin: 0;">81%</div>
+            <div style="display: flex; flex-direction: column; margin-top: 4px;">
+              <div class="card-title" style="font-size: 14px; color: var(--text-main);">Recovery rate</div>
+              <div class="card-subtitle" style="font-size: 14px; margin-top: 2px;">Consistently crushing it!</div>
+            </div>
+          </div>
+          <img src="refs/Spa%20Flower.svg" style="width: 72px; height: 72px; opacity: 0.3;" alt="Flower" />
+        </div>
+
+        <div class="card shadow-ring">
+          <div class="recovery-info" style="display: flex; gap: 12px; align-items: center;">
+            <div class="card-number" style="font-size: 42px; line-height: 1; margin: 0;">48</div>
+            <div style="display: flex; flex-direction: column; margin-top: 4px;">
+              <div class="card-title" style="font-size: 14px; color: var(--text-main);">Total repetitions</div>
+              <div class="card-subtitle" style="font-size: 14px; margin-top: 2px;">Since Nov. 24th, 2025</div>
+            </div>
+          </div>
+          <div class="activity-grid">
+            <!-- generating a few rows of dots -->
+            <script>
+              for(let i=0; i<10*5; i++) {
+                let cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                let rand = Math.random();
+                if(rand > 0.88) {
+                  cell.classList.add('active-image');
+                } else if(rand > 0.75) {
+                  cell.classList.add('active-heavy');
+                } else if(rand > 0.5) {
+                  cell.classList.add('active-light');
+                } else if(rand < 0.1) {
+                  cell.innerHTML = '<img src="refs/Spa%20Flower.svg" style="width: 10px; height: 10px; opacity: 0.3;" alt="Flower" />';
+                }
+                document.write(cell.outerHTML);
+              }
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Congrats Popup -->
+    <div id="congrats-popup" class="popup-fullscreen">
+      <div class="congrats-content" style="margin-bottom: 24px;">
+        <h2>Back on track!</h2>
+      </div>
+      <div class="video-card shadow-ring">
+        <video id="congrats-video" src="refs/flower-animation-gif-download-3440728.mp4" muted playsinline class="flower-video"></video>
+      </div>
+      <div class="congrats-content">
+        <p>Congratulations on maintaining your routine</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Remove splash screen after 2.2 seconds
+    setTimeout(() => {
+      const splash = document.getElementById('splash');
+      if (splash) {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.remove(), 500);
+      }
+    }, 2200);
+
+    // Set current date
+    const dateOptions = { weekday: 'long', month: 'short', day: 'numeric' };
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', dateOptions);
+
+    // Show congrats popup
+    document.getElementById('mark-completed-btn').addEventListener('click', () => {
+      const popup = document.getElementById('congrats-popup');
+      const video = document.getElementById('congrats-video');
+      
+      popup.classList.remove('collapsing');
+      popup.classList.add('active');
+      
+      // Reset and play video
+      video.currentTime = 0;
+      video.play();
+    });
+    
+    // Handle video end to collapse and navigate
+    document.getElementById('congrats-video').addEventListener('ended', () => {
+      const popup = document.getElementById('congrats-popup');
+      
+      // Wait two seconds after video ends
+      setTimeout(() => {
+        // Swap to page 2 behind the popup so it's revealed as it collapses
+        p1.classList.remove('active');
+        p2.classList.add('active');
+        
+        // Start collapse animation
+        popup.classList.add('collapsing');
+        
+        setTimeout(() => {
+          popup.classList.remove('active');
+          popup.classList.remove('collapsing');
+        }, 500); // Wait for collapse animation to finish before resetting
+      }, 2000);
+    });
+
+    // Page navigation
+    const p1 = document.getElementById('page-1');
+    const p2 = document.getElementById('page-2');
+    
+    document.getElementById('go-to-page-2').addEventListener('click', () => {
+      p1.classList.remove('active');
+      p2.classList.add('active');
+    });
+
+    document.getElementById('close-page-2').addEventListener('click', () => {
+      p2.classList.remove('active');
+      p1.classList.add('active');
+    });
+  </script>
+</body>
+</html>
